@@ -121,6 +121,7 @@ class Cart
      *
      * @param mixed     $id
      * @param mixed     $name
+     * @param mixed     $formData
      * @param int|float $qty
      * @param float     $price
      * @param float     $weight
@@ -128,7 +129,7 @@ class Cart
      *
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public function add($id, $name = null, $qty = null, $price = null, $weight = 0, array $options = [])
+    public function add($id, $name = null, $qty = null, $price = null, $weight = 0, array $options = [],$formData='')
     {
         if ($this->isMulti($id)) {
             return array_map(function ($item) {
@@ -136,7 +137,7 @@ class Cart
             }, $id);
         }
 
-        $cartItem = $this->createCartItem($id, $name, $qty, $price, $weight, $options);
+        $cartItem = $this->createCartItem($id, $name, $qty, $price, $weight, $options,$formData);
 
         return $this->addCartItem($cartItem);
     }

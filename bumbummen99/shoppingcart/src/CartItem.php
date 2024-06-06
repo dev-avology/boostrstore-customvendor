@@ -54,6 +54,12 @@ class CartItem implements Arrayable, Jsonable
     public $name;
 
     /**
+     * The formData of the cart item.
+     *
+     * @var string
+     */
+    public $formData;
+    /**
      * The price without TAX of the cart item.
      *
      * @var float
@@ -110,8 +116,9 @@ class CartItem implements Arrayable, Jsonable
      * @param float      $price
      * @param float      $weight
      * @param array      $options
+     * @param string     $formData
      */
-    public function __construct($id, $name, $price, $weight = 0, array $options = [])
+    public function __construct($id, $name, $price, $weight = 0, array $options = [],$formData = '')
     {
         if (empty($id)) {
             throw new \InvalidArgumentException('Please supply a valid identifier.');
@@ -128,10 +135,11 @@ class CartItem implements Arrayable, Jsonable
 
         $this->id = $id;
         $this->name = $name;
+        $this->formData = $formData;
         $this->price = floatval($price);
         $this->weight = floatval($weight);
         $this->options = new CartItemOptions($options);
-        $this->rowId = $this->generateRowId($id, $options);
+        $this->rowId = $this->generateRowId($id, $options,$formData);
     }
 
     /**
@@ -330,11 +338,12 @@ class CartItem implements Arrayable, Jsonable
         $this->id = Arr::get($attributes, 'id', $this->id);
         $this->qty = Arr::get($attributes, 'qty', $this->qty);
         $this->name = Arr::get($attributes, 'name', $this->name);
+        $this->formData = Arr::get($attributes, 'formData', $this->formData);
         $this->price = Arr::get($attributes, 'price', $this->price);
         $this->weight = Arr::get($attributes, 'weight', $this->weight);
         $this->options = new CartItemOptions(Arr::get($attributes, 'options', $this->options));
 
-        $this->rowId = $this->generateRowId($this->id, $this->options->all());
+        $this->rowId = $this->generateRowId($this->id, $this->options->all(),$formData);
     }
 
     /**
@@ -453,8 +462,10 @@ class CartItem implements Arrayable, Jsonable
     public static function fromArray(array $attributes)
     {
         $options = Arr::get($attributes, 'options', []);
+        
+        $formData = Arr::get($attributes, 'formData', '');
 
-        return new self($attributes['id'], $attributes['name'], $attributes['price'], $attributes['weight'], $options);
+        return new self($attributes['id'], $attributes['name'], $attributes['price'], $attributes['weight'], $options,$formData);
     }
 
     /**
@@ -467,9 +478,9 @@ class CartItem implements Arrayable, Jsonable
      *
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public static function fromAttributes($id, $name, $price, $weight, array $options = [])
+    public static function fromAttributes($id, $name, $price, $weight, array $options = [], $formData = '')
     {
-        return new self($id, $name, $price, $weight, $options);
+        return new self($id, $name, $price, $weight, $options,$formData);
     }
 
     /**
@@ -480,11 +491,16 @@ class CartItem implements Arrayable, Jsonable
      *
      * @return string
      */
-    protected function generateRowId($id, array $options)
+    protected function generateRowId($id, array $options,$formData='')
     {
         ksort($options);
+        if($formData != ''){
+            $t=time();
+            return md5($id.serialize($options).$t);
+        }else{
+            return md5($id.serialize($options));
+        }
 
-        return md5($id.serialize($options));
     }
 
     /**
@@ -497,7 +513,8 @@ class CartItem implements Arrayable, Jsonable
         return [
             'rowId'    => $this->rowId,
             'id'       => $this->id,
-            'name'     => $this->name,
+            'name'     => $this->name,     
+            'formData' => $this->formData??'',
             'qty'      => $this->qty,
             'price'    => $this->price,
             'weight'   => $this->weight,
